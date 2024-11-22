@@ -1,0 +1,61 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+
+    - name: Install dependencies
+      run: composer install --no-progress --no-suggest
+
+    - name: Run tests
+      run: vendor/bin/phpunit
+      
+deploy:
+  runs-on: ubuntu-latest
+
+  steps:
+  - name: Checkout code
+    uses: actions/checkout@v3
+
+  - name: Log in to Docker Hub
+    uses: docker/login-action@v2
+    with:
+      username: ${{ secrets.DOCKER_USERNAME }}
+      password: ${{ secrets.DOCKER_PASSWORD }}
+
+  - name: Build and push Docker image
+    run: |
+      docker build -t sorokaoleksandr/mytesting:task-message_web .
+      docker push sorokaoleksandr/mytesting:task-message_web .
+
+# додати наступний крок // Для деплойменту та розгортання на сервері через SSH:  
+
+#- name: Deploy to Server
+#  uses: appleboy/ssh-action@v0.1.2
+# with:
+#    host: ${{ secrets.SERVER_HOST }}
+#    username: ${{ secrets.SERVER_USER }}
+#    password: ${{ secrets.SERVER_PASSWORD }}
+#    script: |
+#      cd /path/to/project
+#      git pull origin main
+#      docker-compose up -d --build
+
+
