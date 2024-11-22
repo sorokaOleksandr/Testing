@@ -1,0 +1,37 @@
+name: CI/CD to Google Cloud
+
+on:
+  push:
+    branches:
+      - mytesting  # Запуск на кожен пуш у гілку myTestingBranch
+
+jobs:
+  build:
+    runs-on: windows-latest  # Запуск на Windows середовищі
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCLOUD_SERVICE_ACCOUNT }}  # JSON облікового запису сервісу
+
+    - name: Configure Docker to use gcloud as a credential helper
+      run: |
+        gcloud auth configure-docker
+
+    - name: Build and push Docker image to Google Container Registry
+      run: |
+        docker build -t gcr.io/${{ secrets.linear-arcadia-439008-d5 }}/php-app:latest .  # Google Cloud Project ID
+        docker push gcr.io/${{ secrets.linear-arcadia-439008-d5 }}/php-app:latest
+
+    - name: Run tests
+      run: |
+        docker build -t php-app .
+        docker run php-app vendor/bin/phpunit tests/
+
+    - name: Deploy to Google Cloud Run
+      run: |
+        gcloud run deploy php-app --image gcr.io/${{ secrets.linear-arcadia-439008-d5 }}/php-app:latest --region ${{ secrets.us-west1 }} --platform managed  # Змініть регіон на свій
